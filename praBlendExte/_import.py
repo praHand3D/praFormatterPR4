@@ -1,33 +1,27 @@
 import bpy
-import bmesh
 import struct
 import os
+from bpy_extras.io_utils import ImportHelper
 from config import MAGIC_CODE, VERSION
 
 
-def _import(path: str):
+def do_import(path: str):
     if not os.path.exists(path):
-        print(f"File not found: {path}")
-        return
+        return None, "File not found"
 
     with open(path, "rb") as f:
-
-        # HEADER
         magic = f.read(4).decode('ascii')
         if magic != MAGIC_CODE:
-            print(f"Invalid magic: {magic}")
-            return
+            return None, f"Invalid magic: {magic}"
 
         version = struct.unpack("B", f.read(1))[0]
         if version != VERSION:
-            print(f"Invalid version: {version}")
-            return
+            return None, f"Invalid version: {version}"
 
-        mesh_count    = struct.unpack("B", f.read(1))[0]
-        object_count  = struct.unpack("B", f.read(1))[0]
+        mesh_count      = struct.unpack("B", f.read(1))[0]
+        object_count    = struct.unpack("B", f.read(1))[0]
         animation_count = struct.unpack("B", f.read(1))[0]
 
-        # MESHES
         meshes = []
         for _ in range(mesh_count):
             mesh_id      = struct.unpack("B", f.read(1))[0]
@@ -36,34 +30,28 @@ def _import(path: str):
 
             vertices = []
             for _ in range(vertex_count):
-                x = struct.unpack("f", f.read(4))[0]
-                y = struct.unpack("f", f.read(4))[0]
-                z = struct.unpack("f", f.read(4))[0]
+                x, y, z = struct.unpack("fff", f.read(12))
                 vertices.append((x, y, z))
 
             indices = []
             for _ in range(index_count):
-                v0 = struct.unpack("H", f.read(2))[0]
-                v1 = struct.unpack("H", f.read(2))[0]
-                v2 = struct.unpack("H", f.read(2))[0]
+                v0, v1, v2 = struct.unpack("HHH", f.read(6))
                 indices.append((v0, v1, v2))
 
             meshes.append((mesh_id, vertices, indices))
 
-        # OBJECTS
+        created_objects = []
         for _ in range(object_count):
             obj_id   = struct.unpack("B", f.read(1))[0]
             mesh_ref = struct.unpack("B", f.read(1))[0]
 
-            px, py, pz = struct.unpack("fff", f.read(12))
-            rx, ry, rz, rw = struct.unpack("ffff", f.read(16))
-            sx, sy, sz = struct.unpack("fff", f.read(12))
+            px, py, pz          = struct.unpack("fff", f.read(12))
+            rx, ry, rz, rw      = struct.unpack("ffff", f.read(16))
+            sx, sy, sz          = struct.unpack("fff", f.read(12))
 
-            # znajdz mesh
-            _, vertices, indices = meshes[mesh_ref]
-
-            # stworz mesh w blenderze
+            mesh_id, vertices, indices = meshes[mesh_ref]
             mesh_name = f"PR4_mesh_{mesh_id}"
+
             if mesh_name in bpy.data.meshes:
                 bl_mesh = bpy.data.meshes[mesh_name]
             else:
@@ -78,18 +66,16 @@ def _import(path: str):
             bl_obj.rotation_mode = 'QUATERNION'
             bl_obj.rotation_quaternion = (rw, rx, ry, rz)
             bl_obj.scale = (sx, sy, sz)
+            created_objects.append(bl_obj)
 
-        # ANIMATIONS
         for _ in range(animation_count):
             anim_id    = struct.unpack("B", f.read(1))[0]
             object_ref = struct.unpack("B", f.read(1))[0]
             fps        = struct.unpack("B", f.read(1))[0]
             kf_count   = struct.unpack("H", f.read(2))[0]
 
-            # znajdz obiekt po object_ref
             target_obj = bpy.data.objects.get(f"PR4_object_{object_ref}")
             if target_obj is None:
-                # pomiń keyframe'y
                 f.read(kf_count * 40)
                 continue
 
@@ -98,13 +84,34 @@ def _import(path: str):
             target_obj.animation_data.action = action
 
             for frame_idx in range(kf_count):
-                px, py, pz = struct.unpack("fff", f.read(12))
+                px, py, pz     = struct.unpack("fff", f.read(12))
                 rx, ry, rz, rw = struct.unpack("ffff", f.read(16))
-                sx, sy, sz = struct.unpack("fff", f.read(12))
+                sx, sy, sz     = struct.unpack("fff", f.read(12))
 
                 target_obj.location = (px, py, pz)
                 target_obj.rotation_quaternion = (rw, rx, ry, rz)
                 target_obj.scale = (sx, sy, sz)
                 target_obj.keyframe_insert("location", frame=frame_idx*10)
                 target_obj.keyframe_insert("rotation_quaternion", frame=frame_idx*10)
-                target_obj.keyframe_insert("scale", frame=frame_idx*10 )
+                target_obj.keyframe_insert("scale", frame=frame_idx*10)
+
+    return len(created_objects), None
+
+
+class PR4_OT_Import(bpy.types.Operator, ImportHelper):
+    bl_idname = "pr4.import"
+    bl_label = "Import .PR4"
+    filename_ext = ".PR4"
+    filter_glob: bpy.props.StringProperty(default="*.PR4", options={'HIDDEN'})
+
+    def execute(self, context):
+        count, error = do_import(self.filepath)
+        if error:
+            self.report({'ERROR'}, error)
+            return {'CANCELLED'}
+        self.report({'INFO'}, f"Imported {count} object(s) from {self.filepath}")
+        return {'FINISHED'}
+
+
+def menu_import(self, context):
+    self.layout.operator(PR4_OT_Import.bl_idname, text="praHand3D (.PR4)")
