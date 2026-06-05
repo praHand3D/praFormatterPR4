@@ -1,0 +1,2 @@
+MAGIC_CODE = "PR44"
+VERSION = 1
