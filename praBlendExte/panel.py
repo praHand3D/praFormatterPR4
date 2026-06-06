@@ -22,9 +22,10 @@ class PR4_PT_Panel(bpy.types.Panel):
                 anim_tag = " (a)" if has_anim else ""
                 row = layout.row()
                 row.label(text=f"{obj.name}  ->  {obj.data.name}{anim_tag}")
-                row.enabled = len(selected) > 0
 
         layout.separator()
-        layout.operator("pr4.export", text="Export Selected", icon='EXPORT')
+        export_row = layout.row()
+        export_row.operator("pr4.export", text="Export Selected", icon='EXPORT')
+        export_row.enabled = len(selected) > 0
         layout.separator()
         layout.operator("pr4.import", text="Import .PR4", icon='IMPORT')
