@@ -84,9 +84,9 @@ def do_import(path: str):
             target_obj.animation_data.action = action
 
             for frame_idx in range(kf_count):
-                px, py, pz     = struct.unpack("fff", f.read(12))
-                rx, ry, rz, rw = struct.unpack("ffff", f.read(16))
-                sx, sy, sz     = struct.unpack("fff", f.read(12))
+                px, pz, py     = struct.unpack("fff", f.read(12))
+                rx, rz, ry, rw = struct.unpack("ffff", f.read(16))
+                sx, sz, sy     = struct.unpack("fff", f.read(12))
 
                 target_obj.location = (px, py, pz)
                 target_obj.rotation_quaternion = (rw, rx, ry, rz)
