@@ -60,8 +60,8 @@ def export(path: str):
 
             for v in mesh_data.vertices:
                 f.write(struct.pack("f", v.co.x))
-                f.write(struct.pack("f", v.co.y))
                 f.write(struct.pack("f", v.co.z))
+                f.write(struct.pack("f", v.co.y))
 
             for face in bm.faces:
                 indices = [v.index for v in face.verts]
@@ -80,15 +80,15 @@ def export(path: str):
             f.write(struct.pack("B", obj_id))
             f.write(struct.pack("B", mesh_ref))
             f.write(struct.pack("f", position.x))
-            f.write(struct.pack("f", position.y))
             f.write(struct.pack("f", position.z))
+            f.write(struct.pack("f", position.y))
             f.write(struct.pack("f", rot.x))
-            f.write(struct.pack("f", rot.y))
             f.write(struct.pack("f", rot.z))
+            f.write(struct.pack("f", rot.y))
             f.write(struct.pack("f", rot.w))
             f.write(struct.pack("f", scale.x))
-            f.write(struct.pack("f", scale.y))
             f.write(struct.pack("f", scale.z))
+            f.write(struct.pack("f", scale.y))
 
         for obj_id, obj in enumerate(objects):
             if obj.animation_data is None or obj.animation_data.action is None:
@@ -103,15 +103,15 @@ def export(path: str):
 
             for loc, rot, scale in keyframes:
                 f.write(struct.pack("f", loc.x))
-                f.write(struct.pack("f", loc.y))
                 f.write(struct.pack("f", loc.z))
+                f.write(struct.pack("f", loc.y))
                 f.write(struct.pack("f", rot.x))
-                f.write(struct.pack("f", rot.y))
                 f.write(struct.pack("f", rot.z))
+                f.write(struct.pack("f", rot.y))
                 f.write(struct.pack("f", rot.w))
                 f.write(struct.pack("f", scale.x))
-                f.write(struct.pack("f", scale.y))
                 f.write(struct.pack("f", scale.z))
+                f.write(struct.pack("f", scale.y))
 
     return len(objects)
 
