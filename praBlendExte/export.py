@@ -29,7 +29,7 @@ def get_animation_keyframes(obj):
     return keyframes
 
 
-def export(path: str):
+def export(path: str, fps: int = 24):
     objects = [obj for obj in bpy.context.selected_objects if obj.type == 'MESH']
 
     if not objects:
@@ -98,7 +98,7 @@ def export(path: str):
 
             f.write(struct.pack("B", obj_id))
             f.write(struct.pack("B", obj_id))
-            f.write(struct.pack("B", 24))
+            f.write(struct.pack("B", fps))
             f.write(struct.pack("H", len(keyframes)))
 
             for loc, rot, scale in keyframes:
@@ -121,8 +121,16 @@ class PR4_OT_Export(bpy.types.Operator, ExportHelper):
     bl_label = "Export .PR4"
     filename_ext = ".PR4"
 
+    fps: bpy.props.IntProperty(
+        name="FPS",
+        description="Animation frames per second",
+        default=24,
+        min=1,
+        max=120
+    )
+
     def execute(self, context):
-        count = export(self.filepath)
+        count = export(self.filepath, self.fps)
         if count == 0:
             self.report({'ERROR'}, "No mesh objects selected")
             return {'CANCELLED'}

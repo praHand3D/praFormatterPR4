@@ -91,9 +91,9 @@ def do_import(path: str):
                 target_obj.location = (px, py, pz)
                 target_obj.rotation_quaternion = (rw, rx, ry, rz)
                 target_obj.scale = (sx, sy, sz)
-                target_obj.keyframe_insert("location", frame=frame_idx*10)
-                target_obj.keyframe_insert("rotation_quaternion", frame=frame_idx*10)
-                target_obj.keyframe_insert("scale", frame=frame_idx*10)
+                target_obj.keyframe_insert("location", frame=frame_idx*fps)
+                target_obj.keyframe_insert("rotation_quaternion", frame=frame_idx*fps)
+                target_obj.keyframe_insert("scale", frame=frame_idx*fps)
 
     return len(created_objects), None
 
